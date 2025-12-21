@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
-import { products, schools } from '../data/mockData'
-import { Filter, Search } from 'lucide-react'
+import { useProducts } from '../hooks/useProducts'
+import { useSchools } from '../hooks/useSchools'
+import { Filter, Search, Loader } from 'lucide-react'
 
 function Uniforms() {
   const [selectedSchool, setSelectedSchool] = useState('all')
@@ -10,20 +11,28 @@ function Uniforms() {
   const [selectedSchoolType, setSelectedSchoolType] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
 
-  const filteredProducts = products.filter((product) => {
-    const matchesSchool = selectedSchool === 'all' || product.school === selectedSchool
+  const { products, loading: productsLoading } = useProducts()
+  const { schools, loading: schoolsLoading } = useSchools()
+
+  const filteredProducts = useMemo(() => {
+    return products.filter((product) => {
+      const matchesSchool = selectedSchool === 'all' || (product.school && (product.school._id === selectedSchool || product.school.slug === selectedSchool))
     const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase())
+      const matchesSearch = searchQuery === '' || product.name.toLowerCase().includes(searchQuery.toLowerCase())
     
     // Filter by school type (pre-primary/primary)
     let matchesSchoolType = true
     if (selectedSchoolType !== 'all') {
-      const school = schools.find(s => s.id === product.school)
-      matchesSchoolType = school?.category === selectedSchoolType
+        const schoolObj = typeof product.school === 'object' ? product.school : schools.find(s => s._id === product.school || s.slug === product.school)
+        matchesSchoolType = schoolObj?.category === selectedSchoolType
     }
     
-    return matchesSchool && matchesCategory && matchesSearch && matchesSchoolType && product.school !== 'mens-wear'
+      // Exclude mens-wear (institution products)
+      const isMensWear = product.institution === 'mens-wear'
+      
+      return matchesSchool && matchesCategory && matchesSearch && matchesSchoolType && !isMensWear
   })
+  }, [products, schools, selectedSchool, selectedCategory, selectedSchoolType, searchQuery])
 
   const categories = [
     { id: 'all', name: 'All Categories' },
@@ -93,7 +102,7 @@ function Uniforms() {
             >
               <option value="all">All Schools</option>
               {schools.map((school) => (
-                <option key={school.id} value={school.id}>
+                <option key={school._id || school.id} value={school._id || school.id}>
                   {school.name}
                 </option>
               ))}
@@ -126,12 +135,12 @@ function Uniforms() {
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
             {schools.filter(s => s.category === 'pre-primary').map((school) => (
               <Link
-                key={school.id}
-                to={`/uniforms/${school.id}`}
+                key={school._id || school.id}
+                to={`/uniforms/${school.slug || school._id || school.id}`}
                 className="card p-4 text-center hover:scale-105 transition-transform"
-                style={{ borderTop: `4px solid ${school.color}` }}
+                style={{ borderTop: `4px solid ${school.color || '#0ea5e9'}` }}
               >
-                <div className="text-3xl mb-2">{school.logo}</div>
+                <div className="text-3xl mb-2">{school.logo || '🏫'}</div>
                 <h3 className="font-semibold text-sm">{school.name}</h3>
                 <span className="text-xs text-gray-500 mt-1 block">Pre-Primary</span>
               </Link>
@@ -142,12 +151,12 @@ function Uniforms() {
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             {schools.filter(s => s.category === 'primary').map((school) => (
               <Link
-                key={school.id}
-                to={`/uniforms/${school.id}`}
+                key={school._id || school.id}
+                to={`/uniforms/${school.slug || school._id || school.id}`}
                 className="card p-4 text-center hover:scale-105 transition-transform"
-                style={{ borderTop: `4px solid ${school.color}` }}
+                style={{ borderTop: `4px solid ${school.color || '#0ea5e9'}` }}
               >
-                <div className="text-3xl mb-2">{school.logo}</div>
+                <div className="text-3xl mb-2">{school.logo || '🏫'}</div>
                 <h3 className="font-semibold text-sm">{school.name}</h3>
                 <span className="text-xs text-gray-500 mt-1 block">Primary</span>
               </Link>
@@ -159,12 +168,20 @@ function Uniforms() {
         <div className="mb-6">
           <p className="text-gray-600">
             Showing <span className="font-semibold">{filteredProducts.length}</span> products
-            {selectedSchool !== 'all' && ` for ${schools.find(s => s.id === selectedSchool)?.name}`}
+            {selectedSchool !== 'all' && ` for ${schools.find(s => (s._id || s.id) === selectedSchool)?.name}`}
           </p>
         </div>
 
+        {/* Loading State */}
+        {(productsLoading || schoolsLoading) && (
+          <div className="text-center py-16">
+            <Loader className="animate-spin mx-auto mb-4 text-primary-600" size={48} />
+            <p className="text-gray-600">Loading products...</p>
+          </div>
+        )}
+
         {/* Products Grid */}
-        {filteredProducts.length > 0 ? (
+        {!productsLoading && !schoolsLoading && filteredProducts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProducts.map((product) => (
               <ProductCard key={product.id} product={product} />

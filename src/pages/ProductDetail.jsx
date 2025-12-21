@@ -1,19 +1,43 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { ShoppingCart, Star, Heart, Share2, ArrowLeft, Check, Truck, Shield, RotateCcw } from 'lucide-react'
+import { ShoppingCart, Star, Heart, Share2, ArrowLeft, Check, Truck, Shield, RotateCcw, Loader } from 'lucide-react'
 import { useCart } from '../context/CartContext'
-import { products, schools } from '../data/mockData'
+import { useProduct } from '../hooks/useProducts'
+import { useSchools } from '../hooks/useSchools'
 
 function ProductDetail() {
   const { id } = useParams()
-  const product = products.find(p => p.id === parseInt(id))
+  const { product, loading } = useProduct(id)
+  const { schools } = useSchools()
   const { addToCart } = useCart()
-  const [selectedSize, setSelectedSize] = useState(product?.sizes[0] || '')
-  const [selectedColor, setSelectedColor] = useState(product?.colors[0] || '')
+  const [selectedSize, setSelectedSize] = useState('')
+  const [selectedColor, setSelectedColor] = useState('')
   const [quantity, setQuantity] = useState(1)
   const [currentImage, setCurrentImage] = useState(0)
   const [addedToCart, setAddedToCart] = useState(false)
   const [isWishlisted, setIsWishlisted] = useState(false)
+
+  useEffect(() => {
+    if (product) {
+      if (product.sizes && product.sizes.length > 0) {
+        setSelectedSize(product.sizes[0])
+      }
+      if (product.colors && product.colors.length > 0) {
+        setSelectedColor(product.colors[0])
+      }
+    }
+  }, [product])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <Loader className="animate-spin mx-auto mb-4 text-primary-600" size={48} />
+          <p className="text-gray-600">Loading product...</p>
+        </div>
+      </div>
+    )
+  }
 
   if (!product) {
     return (
@@ -30,7 +54,22 @@ function ProductDetail() {
     )
   }
 
-  const school = schools.find(s => s.id === product.school)
+  const school = typeof product.school === 'object' 
+    ? product.school 
+    : schools.find(s => (s._id || s.id) === product.school)
+  
+  const isOutOfStock = product.isOutOfStock
+  const stockStatus = product.stockStatus || []
+  const availableSizes = stockStatus
+    .filter(item => item.inStock)
+    .map(item => item.size)
+    .filter((size, index, self) => self.indexOf(size) === index)
+  
+  // Check if selected size/color is in stock
+  const selectedStockItem = stockStatus.find(
+    item => item.size === selectedSize && item.color === (selectedColor || 'Default')
+  )
+  const isSelectedInStock = selectedStockItem?.inStock || false
   const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0

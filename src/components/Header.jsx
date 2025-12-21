@@ -22,8 +22,8 @@ function Header() {
     { path: '/', label: 'Home' },
     { path: '/mens-wear', label: "Men's Wear" },
     { path: '/uniforms', label: 'Uniforms' },
+    { path: '/corporate-inquiry', label: 'Corporate Inquiry' },
     { path: '/size-charts', label: 'Size Charts' },
-    { path: '/sales-report', label: 'Sales Report' },
   ]
 
   return (

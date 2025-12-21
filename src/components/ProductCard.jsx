@@ -27,9 +27,13 @@ function ProductCard({ product }) {
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0
 
+  const productId = product._id || product.id
+  const isOutOfStock = product.isOutOfStock !== undefined ? product.isOutOfStock : !product.inStock
+  const inStock = !isOutOfStock
+
   return (
     <Link 
-      to={`/product/${product.id}`} 
+      to={`/product/${productId}`} 
       className="card group block"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -52,7 +56,7 @@ function ProductCard({ product }) {
               {discount}% OFF
             </span>
           )}
-          {product.inStock && (
+          {inStock && (
             <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
               In Stock
             </span>
@@ -74,7 +78,7 @@ function ProductCard({ product }) {
             <Heart size={18} className={isWishlisted ? 'fill-current' : ''} />
           </button>
           <Link
-            to={`/product/${product.id}`}
+            to={`/product/${productId}`}
             className="p-2.5 rounded-full bg-white/90 text-gray-700 hover:bg-white shadow-lg backdrop-blur-sm transition-all duration-200"
             onClick={(e) => e.stopPropagation()}
           >
@@ -88,7 +92,7 @@ function ProductCard({ product }) {
         }`}>
           <button
             onClick={handleAddToCart}
-            disabled={!product.inStock || isAdding}
+            disabled={!inStock || isAdding}
             className={`w-full bg-gradient-to-r from-primary-600 to-primary-700 text-white py-2.5 rounded-xl font-semibold 
                        shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 
                        active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
@@ -98,7 +102,7 @@ function ProductCard({ product }) {
           </button>
         </div>
 
-        {!product.inStock && (
+        {!inStock && (
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
             <span className="text-white font-bold text-lg bg-black/50 px-4 py-2 rounded-lg">Out of Stock</span>
           </div>

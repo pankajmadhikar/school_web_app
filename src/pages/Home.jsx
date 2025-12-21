@@ -1,10 +1,14 @@
 import { Link } from 'react-router-dom'
 import { ArrowRight, Shield, Truck, Headphones, Sparkles, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react'
 import ProductCard from '../components/ProductCard'
-import { products, schools } from '../data/mockData'
+import { useProducts } from '../hooks/useProducts'
+import { useSchools } from '../hooks/useSchools'
 import { useState, useEffect } from 'react'
 
 function Home() {
+  const { products, loading: productsLoading } = useProducts({ limit: 8, page: 1 })
+  const { schools, loading: schoolsLoading } = useSchools()
+  
   const featuredProducts = products.slice(0, 8)
   const featuredSchools = schools.slice(0, 4)
 

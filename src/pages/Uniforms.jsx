@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
 import { useProducts } from '../hooks/useProducts'
@@ -13,6 +13,24 @@ function Uniforms() {
 
   const { products, loading: productsLoading } = useProducts()
   const { schools, loading: schoolsLoading } = useSchools()
+
+  // Filter schools based on selected school type
+  const filteredSchools = useMemo(() => {
+    if (selectedSchoolType === 'all') {
+      return schools;
+    }
+    return schools.filter(school => school.category === selectedSchoolType);
+  }, [schools, selectedSchoolType]);
+
+  // Reset selected school if it doesn't match the current filter
+  useEffect(() => {
+    if (selectedSchool !== 'all' && selectedSchoolType !== 'all') {
+      const selectedSchoolObj = schools.find(s => (s._id || s.id) === selectedSchool);
+      if (selectedSchoolObj && selectedSchoolObj.category !== selectedSchoolType) {
+        setSelectedSchool('all');
+      }
+    }
+  }, [selectedSchoolType, schools, selectedSchool]);
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
@@ -86,6 +104,8 @@ function Uniforms() {
               <option value="all">All Types</option>
               <option value="pre-primary">Pre-Primary</option>
               <option value="primary">Primary</option>
+              <option value="secondary">Secondary</option>
+              <option value="institution">Institution</option>
             </select>
           </div>
 
@@ -99,9 +119,16 @@ function Uniforms() {
               value={selectedSchool}
               onChange={(e) => setSelectedSchool(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+              disabled={selectedSchoolType !== 'all' && filteredSchools.length === 0}
             >
-              <option value="all">All Schools</option>
-              {schools.map((school) => (
+              <option value="all">
+                {selectedSchoolType === 'all' 
+                  ? 'All Schools' 
+                  : filteredSchools.length === 0 
+                    ? `No ${selectedSchoolType === 'pre-primary' ? 'Pre-Primary' : selectedSchoolType === 'institution' ? 'Institution' : selectedSchoolType.charAt(0).toUpperCase() + selectedSchoolType.slice(1)} Schools`
+                    : `All ${selectedSchoolType === 'pre-primary' ? 'Pre-Primary' : selectedSchoolType === 'institution' ? 'Institution' : selectedSchoolType.charAt(0).toUpperCase() + selectedSchoolType.slice(1)} Schools`}
+              </option>
+              {filteredSchools.map((school) => (
                 <option key={school._id || school.id} value={school._id || school.id}>
                   {school.name}
                 </option>
@@ -130,45 +157,97 @@ function Uniforms() {
         </div>
 
         {/* School Quick Links by Type */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-4">Pre-Primary Schools</h2>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-            {schools.filter(s => s.category === 'pre-primary').map((school) => (
-              <Link
-                key={school._id || school.id}
-                to={`/uniforms/${school.slug || school._id || school.id}`}
-                className="card p-4 text-center hover:scale-105 transition-transform"
-                style={{ borderTop: `4px solid ${school.color || '#0ea5e9'}` }}
-              >
-                <div className="text-3xl mb-2">{school.logo || '🏫'}</div>
-                <h3 className="font-semibold text-sm">{school.name}</h3>
-                <span className="text-xs text-gray-500 mt-1 block">Pre-Primary</span>
-              </Link>
-            ))}
-          </div>
+        <div className="mb-8 space-y-8">
+          {/* Pre-Primary Schools */}
+          {schools.filter(s => s.category === 'pre-primary').length > 0 && (
+            <div>
+              <h2 className="text-2xl font-bold mb-4">Pre-Primary Schools</h2>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                {schools.filter(s => s.category === 'pre-primary').map((school) => (
+                  <Link
+                    key={school._id || school.id}
+                    to={`/uniforms/${school.slug || school._id || school.id}`}
+                    className="card p-4 text-center hover:scale-105 transition-transform"
+                    style={{ borderTop: `4px solid ${school.color || '#0ea5e9'}` }}
+                  >
+                    <div className="text-3xl mb-2">{school.logo || '🏫'}</div>
+                    <h3 className="font-semibold text-sm">{school.name}</h3>
+                    <span className="text-xs text-gray-500 mt-1 block">Pre-Primary</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
 
-          <h2 className="text-2xl font-bold mb-4">Primary Schools</h2>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            {schools.filter(s => s.category === 'primary').map((school) => (
-              <Link
-                key={school._id || school.id}
-                to={`/uniforms/${school.slug || school._id || school.id}`}
-                className="card p-4 text-center hover:scale-105 transition-transform"
-                style={{ borderTop: `4px solid ${school.color || '#0ea5e9'}` }}
-              >
-                <div className="text-3xl mb-2">{school.logo || '🏫'}</div>
-                <h3 className="font-semibold text-sm">{school.name}</h3>
-                <span className="text-xs text-gray-500 mt-1 block">Primary</span>
-              </Link>
-            ))}
-          </div>
+          {/* Primary Schools */}
+          {schools.filter(s => s.category === 'primary').length > 0 && (
+            <div>
+              <h2 className="text-2xl font-bold mb-4">Primary Schools</h2>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                {schools.filter(s => s.category === 'primary').map((school) => (
+                  <Link
+                    key={school._id || school.id}
+                    to={`/uniforms/${school.slug || school._id || school.id}`}
+                    className="card p-4 text-center hover:scale-105 transition-transform"
+                    style={{ borderTop: `4px solid ${school.color || '#0ea5e9'}` }}
+                  >
+                    <div className="text-3xl mb-2">{school.logo || '🏫'}</div>
+                    <h3 className="font-semibold text-sm">{school.name}</h3>
+                    <span className="text-xs text-gray-500 mt-1 block">Primary</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Secondary Schools */}
+          {schools.filter(s => s.category === 'secondary').length > 0 && (
+            <div>
+              <h2 className="text-2xl font-bold mb-4">Secondary Schools</h2>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                {schools.filter(s => s.category === 'secondary').map((school) => (
+                  <Link
+                    key={school._id || school.id}
+                    to={`/uniforms/${school.slug || school._id || school.id}`}
+                    className="card p-4 text-center hover:scale-105 transition-transform"
+                    style={{ borderTop: `4px solid ${school.color || '#0ea5e9'}` }}
+                  >
+                    <div className="text-3xl mb-2">{school.logo || '🏫'}</div>
+                    <h3 className="font-semibold text-sm">{school.name}</h3>
+                    <span className="text-xs text-gray-500 mt-1 block">Secondary</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Institution Schools */}
+          {schools.filter(s => s.category === 'institution').length > 0 && (
+            <div>
+              <h2 className="text-2xl font-bold mb-4">Institutions</h2>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                {schools.filter(s => s.category === 'institution').map((school) => (
+                  <Link
+                    key={school._id || school.id}
+                    to={`/uniforms/${school.slug || school._id || school.id}`}
+                    className="card p-4 text-center hover:scale-105 transition-transform"
+                    style={{ borderTop: `4px solid ${school.color || '#0ea5e9'}` }}
+                  >
+                    <div className="text-3xl mb-2">{school.logo || '🏫'}</div>
+                    <h3 className="font-semibold text-sm">{school.name}</h3>
+                    <span className="text-xs text-gray-500 mt-1 block">Institution</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Products Count */}
         <div className="mb-6">
           <p className="text-gray-600">
             Showing <span className="font-semibold">{filteredProducts.length}</span> products
-            {selectedSchool !== 'all' && ` for ${schools.find(s => (s._id || s.id) === selectedSchool)?.name}`}
+            {selectedSchool !== 'all' && ` for ${filteredSchools.find(s => (s._id || s.id) === selectedSchool)?.name || schools.find(s => (s._id || s.id) === selectedSchool)?.name}`}
           </p>
         </div>
 
@@ -184,7 +263,7 @@ function Uniforms() {
         {!productsLoading && !schoolsLoading && filteredProducts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
+              <ProductCard key={product._id || product.id} product={product} />
             ))}
           </div>
         ) : (

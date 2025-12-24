@@ -1,14 +1,19 @@
 import { Link, useLocation } from 'react-router-dom'
-import { ShoppingCart, Menu, X } from 'lucide-react'
+import { ShoppingCart, Menu, X, ChevronDown } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useCart } from '../context/CartContext'
+import { useSchools } from '../hooks/useSchools'
 
 function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
+  const [isShopBySchoolOpen, setIsShopBySchoolOpen] = useState(false)
+  const [hoveredSchool, setHoveredSchool] = useState(null)
+  const [closeTimeout, setCloseTimeout] = useState(null)
   const { getCartCount } = useCart()
   const cartCount = getCartCount()
   const location = useLocation()
+  const { schools } = useSchools()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -18,10 +23,52 @@ function Header() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (closeTimeout) {
+        clearTimeout(closeTimeout)
+      }
+    }
+  }, [closeTimeout])
+
+  const handleMouseEnter = () => {
+    if (closeTimeout) {
+      clearTimeout(closeTimeout)
+      setCloseTimeout(null)
+    }
+    setIsShopBySchoolOpen(true)
+  }
+
+  const handleMouseLeave = () => {
+    // Add a small delay before closing to allow cursor movement
+    const timeout = setTimeout(() => {
+      setIsShopBySchoolOpen(false)
+      setHoveredSchool(null)
+    }, 200) // 200ms delay
+    setCloseTimeout(timeout)
+  }
+
+  // Group schools by category
+  const schoolsByCategory = schools.reduce((acc, school) => {
+    const category = school.category || 'primary'
+    if (!acc[category]) {
+      acc[category] = []
+    }
+    acc[category].push(school)
+    return acc
+  }, {})
+
+  const categoryLabels = {
+    'pre-primary': 'Pre-Primary',
+    'primary': 'Primary',
+    'secondary': 'Secondary',
+    'institution': 'Institution',
+  }
+
   const navLinks = [
     { path: '/', label: 'Home' },
     { path: '/mens-wear', label: "Men's Wear" },
-    { path: '/uniforms', label: 'Uniforms' },
     { path: '/corporate-inquiry', label: 'Corporate Inquiry' },
     { path: '/size-charts', label: 'Size Charts' },
   ]
@@ -68,6 +115,166 @@ function Header() {
                 )}
               </Link>
             ))}
+             <div
+              className="relative"
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+            >
+              <button
+                className={`relative px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-1 ${
+                  location.pathname.startsWith('/uniforms')
+                    ? 'text-primary-600 bg-primary-50'
+                    : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
+                }`}
+              >
+                <span>Shop by School</span>
+                <ChevronDown size={16} className={`transition-transform ${isShopBySchoolOpen ? 'rotate-180' : ''}`} />
+                {location.pathname.startsWith('/uniforms') && (
+                  <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary-600 rounded-full"></span>
+                )}
+              </button>
+
+              {/* Main Dropdown */}
+              {isShopBySchoolOpen && (
+                <div 
+                  className="main-dropdown absolute top-full left-0 w-64 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50"
+                  style={{ marginTop: '0px' }}
+                  onMouseEnter={handleMouseEnter}
+                  onMouseLeave={handleMouseLeave}
+                >
+                  {Object.entries(schoolsByCategory).map(([category, categorySchools]) => (
+                    categorySchools.length > 0 && (
+                      <div key={category} className="relative">
+                        {categorySchools.map((school, index) => (
+                          <div
+                            key={school._id || school.id}
+                            className="school-item-wrapper relative w-full"
+                            style={{ 
+                              marginTop: index === 0 ? '0' : '-1px',
+                              paddingTop: index === 0 ? '0' : '1px'
+                            }}
+                            onMouseEnter={() => {
+                              if (closeTimeout) {
+                                clearTimeout(closeTimeout)
+                                setCloseTimeout(null)
+                              }
+                              setHoveredSchool(school._id || school.id)
+                              setIsShopBySchoolOpen(true)
+                            }}
+                            onMouseLeave={(e) => {
+                              // Check if moving to side dropdown or another school item wrapper
+                              const relatedTarget = e.relatedTarget
+                              if (relatedTarget) {
+                                const isMovingToSideDropdown = relatedTarget.closest('.side-dropdown')
+                                const isMovingToSchoolWrapper = relatedTarget.closest('.school-item-wrapper')
+                                const isMovingToMainDropdown = relatedTarget.closest('.main-dropdown')
+                                if (!isMovingToSideDropdown && !isMovingToSchoolWrapper && !isMovingToMainDropdown) {
+                                  const timeout = setTimeout(() => {
+                                    setHoveredSchool(null)
+                                  }, 200)
+                                  setCloseTimeout(timeout)
+                                }
+                              } else {
+                                const timeout = setTimeout(() => {
+                                  setHoveredSchool(null)
+                                }, 200)
+                                setCloseTimeout(timeout)
+                              }
+                            }}
+                          >
+                            <Link
+                              to={`/uniforms/${school.slug || school._id || school.id}`}
+                              className="school-item flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors block"
+                              onClick={() => {
+                                setIsShopBySchoolOpen(false)
+                                setHoveredSchool(null)
+                              }}
+                            >
+                              <div
+                                className="w-8 h-8 rounded flex items-center justify-center text-lg"
+                                style={{ backgroundColor: (school.color || '#0ea5e9') + '20', color: school.color || '#0ea5e9' }}
+                              >
+                                {school.logo || '🏫'}
+                              </div>
+                              <span className="flex-1 text-gray-700 font-medium">{school.name}</span>
+                              <ChevronDown size={14} className="text-gray-400" />
+                            </Link>
+
+                            {/* Invisible bridge to prevent gap between school item and side dropdown */}
+                            {hoveredSchool === (school._id || school.id) && (
+                              <div 
+                                className="absolute left-full top-0 w-2 h-full z-40 pointer-events-auto"
+                                style={{ marginLeft: '-2px' }}
+                                onMouseEnter={() => {
+                                  if (closeTimeout) {
+                                    clearTimeout(closeTimeout)
+                                    setCloseTimeout(null)
+                                  }
+                                  setHoveredSchool(school._id || school.id)
+                                  setIsShopBySchoolOpen(true)
+                                }}
+                              />
+                            )}
+
+                            {/* Side Dropdown for Product Categories */}
+                            {hoveredSchool === (school._id || school.id) && (
+                              <div 
+                                className="side-dropdown absolute left-full top-0 w-52 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50"
+                                style={{ marginLeft: '-2px' }}
+                                onMouseEnter={() => {
+                                  if (closeTimeout) {
+                                    clearTimeout(closeTimeout)
+                                    setCloseTimeout(null)
+                                  }
+                                  setHoveredSchool(school._id || school.id)
+                                  setIsShopBySchoolOpen(true)
+                                }}
+                                onMouseLeave={() => {
+                                  setHoveredSchool(null)
+                                }}
+                              >
+                                <Link
+                                  to={`/uniforms/${school.slug || school._id || school.id}`}
+                                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-600 font-semibold border-b border-gray-100"
+                                  onClick={() => {
+                                    setIsShopBySchoolOpen(false)
+                                    setHoveredSchool(null)
+                                  }}
+                                >
+                                  All Products
+                                </Link>
+                                {[
+                                  { id: 'uniforms', name: 'Uniforms' },
+                                  { id: 'sportswear', name: 'Sportswear' },
+                                  { id: 'footwear', name: 'Footwear' },
+                                  { id: 'accessories', name: 'Accessories' },
+                                  { id: 'outerwear', name: 'Outerwear' },
+                                ].map((cat) => (
+                                  <Link
+                                    key={cat.id}
+                                    to={`/uniforms/${school.slug || school._id || school.id}?productCategory=${cat.id}`}
+                                    className="block px-4 py-2 text-sm text-gray-600 hover:bg-primary-50 hover:text-primary-600 transition-colors"
+                                    onClick={() => {
+                                      setIsShopBySchoolOpen(false)
+                                      setHoveredSchool(null)
+                                    }}
+                                  >
+                                    {cat.name}
+                                  </Link>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        {Object.keys(schoolsByCategory).indexOf(category) < Object.keys(schoolsByCategory).length - 1 && (
+                          <div className="border-t my-1 mx-2"></div>
+                        )}
+                      </div>
+                    )
+                  ))}
+                </div>
+              )}
+            </div>
           </nav>
 
           {/* Cart Icon */}
@@ -104,6 +311,33 @@ function Header() {
         >
           <nav className="py-4 border-t">
             <div className="flex flex-col space-y-2">
+              {/* Mobile Shop by School */}
+              <div className="px-4">
+                <div className="font-semibold text-gray-700 mb-2">Shop by School</div>
+                <div className="pl-4 space-y-1">
+                  {Object.entries(schoolsByCategory).map(([category, categorySchools]) => (
+                    categorySchools.length > 0 && (
+                      <div key={category} className="mb-3">
+                        <div className="text-xs font-semibold text-gray-500 uppercase mb-1">
+                          {categoryLabels[category] || category}
+                        </div>
+                        {categorySchools.map((school) => (
+                          <Link
+                            key={school._id || school.id}
+                            to={`/uniforms/${school.slug || school._id || school.id}`}
+                            className="block px-3 py-2 text-sm text-gray-700 hover:text-primary-600 hover:bg-gray-50 rounded"
+                            onClick={() => setIsMenuOpen(false)}
+                          >
+                            {school.name}
+                          </Link>
+                        ))}
+                      </div>
+                    )
+                  ))}
+                </div>
+              </div>
+              
+              {/* Other Mobile Links */}
               {navLinks.map((link) => (
                 <Link
                   key={link.path}

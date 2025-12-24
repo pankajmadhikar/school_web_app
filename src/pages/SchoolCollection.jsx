@@ -1,12 +1,55 @@
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useSearchParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
-import { products, schools } from '../data/mockData'
-import { ArrowLeft } from 'lucide-react'
+import { useProducts } from '../hooks/useProducts'
+import { useSchool } from '../hooks/useSchools'
+import { ArrowLeft, Loader } from 'lucide-react'
+import { useMemo } from 'react'
 
 function SchoolCollection() {
   const { schoolId } = useParams()
-  const school = schools.find(s => s.id === schoolId)
-  const schoolProducts = products.filter(p => p.school === schoolId)
+  const [searchParams] = useSearchParams()
+  const productCategory = searchParams.get('productCategory')
+  const { products, loading: productsLoading } = useProducts()
+  const { school, loading: schoolLoading } = useSchool(schoolId)
+  
+  const schoolProducts = useMemo(() => {
+    if (!school || !products || products.length === 0) return []
+    
+    let filtered = products.filter((product) => {
+      // Check if product belongs to this school
+      let matchesSchool = false
+      
+      if (product.school) {
+        if (typeof product.school === 'object') {
+          matchesSchool = (product.school._id === school._id || product.school.slug === school.slug || product.school.id === school._id)
+        } else if (typeof product.school === 'string') {
+          matchesSchool = (product.school === school._id || product.school === school.slug || product.school === school.id)
+        }
+      }
+      
+      if (!matchesSchool) return false
+      
+      // Filter by product category if specified
+      if (productCategory) {
+        return product.category === productCategory
+      }
+      
+      return true
+    })
+    
+    return filtered
+  }, [products, school, productCategory])
+
+  if (schoolLoading || productsLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader className="animate-spin mx-auto mb-4 text-primary-600" size={48} />
+          <p className="text-gray-600">Loading school collection...</p>
+        </div>
+      </div>
+    )
+  }
 
   if (!school) {
     return (
@@ -22,10 +65,12 @@ function SchoolCollection() {
   }
 
   const categories = ['uniforms', 'sportswear', 'footwear', 'accessories', 'outerwear']
-  const productsByCategory = categories.reduce((acc, category) => {
-    acc[category] = schoolProducts.filter(p => p.category === category)
-    return acc
-  }, {})
+  const productsByCategory = useMemo(() => {
+    return categories.reduce((acc, category) => {
+      acc[category] = schoolProducts.filter(p => p.category === category)
+      return acc
+    }, {})
+  }, [schoolProducts])
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -43,10 +88,15 @@ function SchoolCollection() {
             Back to All Schools
           </Link>
           <div className="flex items-center space-x-4 mb-4">
-            <div className="text-6xl">{school.logo}</div>
+            <div className="text-6xl">{school.logo || '🏫'}</div>
             <div>
               <h1 className="text-4xl md:text-5xl font-bold">{school.name}</h1>
-              <p className="text-xl mt-2 opacity-90">Complete Uniform Collection</p>
+              <p className="text-xl mt-2 opacity-90">
+                {productCategory 
+                  ? `${productCategory.charAt(0).toUpperCase() + productCategory.slice(1)} Collection`
+                  : 'Complete Uniform Collection'
+                }
+              </p>
             </div>
           </div>
         </div>
@@ -63,8 +113,21 @@ function SchoolCollection() {
           </p>
         </div>
 
-        {/* Products by Category */}
-        {categories.map((category) => {
+        {/* Category Filter Badge */}
+        {productCategory && (
+          <div className="mb-6">
+            <Link
+              to={`/uniforms/${school.slug || school._id}`}
+              className="inline-flex items-center px-4 py-2 bg-white rounded-lg shadow-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              <span className="mr-2">Filtered by: {productCategory.charAt(0).toUpperCase() + productCategory.slice(1)}</span>
+              <span className="text-primary-600">× Clear</span>
+            </Link>
+          </div>
+        )}
+
+        {/* Products by Category (only show if no specific category filter) */}
+        {!productCategory && categories.map((category) => {
           const categoryProducts = productsByCategory[category]
           if (categoryProducts.length === 0) return null
 
@@ -81,20 +144,25 @@ function SchoolCollection() {
               <h2 className="text-3xl font-bold mb-6">{categoryNames[category]}</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {categoryProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                  <ProductCard key={product._id || product.id} product={product} />
                 ))}
               </div>
             </div>
           )
         })}
 
-        {/* All Products */}
+        {/* All Products (show filtered or all) */}
         {schoolProducts.length > 0 && (
           <div className="mb-12">
-            <h2 className="text-3xl font-bold mb-6">All Products</h2>
+            <h2 className="text-3xl font-bold mb-6">
+              {productCategory 
+                ? `${productCategory.charAt(0).toUpperCase() + productCategory.slice(1)} Products`
+                : 'All Products'
+              }
+            </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {schoolProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
+                <ProductCard key={product._id || product.id} product={product} />
               ))}
             </div>
           </div>

@@ -1,7 +1,7 @@
 import { useParams, Link, useSearchParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
 import { useProducts } from '../hooks/useProducts'
-import { useSchool } from '../hooks/useSchools'
+import { useSchools } from '../hooks/useSchools'
 import { ArrowLeft, Loader } from 'lucide-react'
 import { useMemo } from 'react'
 
@@ -9,38 +9,52 @@ function SchoolCollection() {
   const { schoolId } = useParams()
   const [searchParams] = useSearchParams()
   const productCategory = searchParams.get('productCategory')
-  const { products, loading: productsLoading } = useProducts()
-  const { school, loading: schoolLoading } = useSchool(schoolId)
+
+  const { schools, loading: schoolsLoading } = useSchools()
+
+  // Find school in the list to avoid backend lookups that might fail on slugs
+  const school = useMemo(() => {
+    if (!schools || !schoolId) return null
+    return schools.find(s => s.slug === schoolId || s._id === schoolId)
+  }, [schools, schoolId])
+
+  // Fetch only relevant products for this school/category
+  const productsParams = useMemo(() => {
+    const params = { limit: 100 }
+    if (school?._id) params.school = school._id
+    if (productCategory) params.category = productCategory
+    return params
+  }, [school?._id, productCategory])
+
+  const { products, loading: productsLoading } = useProducts(productsParams)
 
   const schoolProducts = useMemo(() => {
-    if (!school || !products || products.length === 0) return []
+    if (!products || !school) return []
 
-    let filtered = products.filter((product) => {
-      // Check if product belongs to this school
-      let matchesSchool = false
+    // Client-side filter to ensure only this school's products are shown
+    return products.filter(product => {
+      if (!product.school) return false
 
-      if (product.school) {
-        if (typeof product.school === 'object') {
-          matchesSchool = (product.school._id === school._id || product.school.slug === school.slug || product.school.id === school._id)
-        } else if (typeof product.school === 'string') {
-          matchesSchool = (product.school === school._id || product.school === school.slug || product.school === school.id)
-        }
-      }
+      // Handle both populated school object and school ID string
+      const productSchoolId = typeof product.school === 'object'
+        ? product.school._id
+        : product.school
 
-      if (!matchesSchool) return false
-
-      // Filter by product category if specified
-      if (productCategory) {
-        return product.category === productCategory
-      }
-
-      return true
+      return productSchoolId === school._id
     })
+  }, [products, school])
 
-    return filtered
-  }, [products, school, productCategory])
+  const categories = ['uniforms', 'sportswear', 'footwear', 'accessories', 'outerwear']
 
-  if (schoolLoading || productsLoading) {
+  const productsByCategory = useMemo(() => {
+    return categories.reduce((acc, category) => {
+      acc[category] = schoolProducts.filter(p => p.category === category)
+      return acc
+    }, {})
+  }, [schoolProducts])
+
+  // Early returns AFTER all hooks
+  if (schoolsLoading || productsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -63,20 +77,6 @@ function SchoolCollection() {
       </div>
     )
   }
-
-  const categories = useMemo(() => {
-    if (school && Array.isArray(school.category) && school.category.length > 0) {
-      return school.category
-    }
-    return ['uniforms', 'sportswear', 'footwear', 'accessories', 'outerwear']
-  }, [school])
-
-  const productsByCategory = useMemo(() => {
-    return categories.reduce((acc, category) => {
-      acc[category] = schoolProducts.filter(p => p.category === category)
-      return acc
-    }, {})
-  }, [schoolProducts, categories])
 
   return (
     <div className="min-h-screen bg-gray-50">

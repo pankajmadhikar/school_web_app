@@ -6,6 +6,8 @@ import { useSchools } from '../hooks/useSchools'
 
 function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isMobileSchoolsOpen, setIsMobileSchoolsOpen] = useState(false)
+  const [expandedSchoolId, setExpandedSchoolId] = useState(null)
   const [isScrolled, setIsScrolled] = useState(false)
   const [isShopBySchoolOpen, setIsShopBySchoolOpen] = useState(false)
   const [hoveredSchool, setHoveredSchool] = useState(null)
@@ -69,7 +71,6 @@ function Header() {
   }
 
   const navLinks = [
-    { path: '/', label: 'Home' },
     { path: '/mens-wear', label: "Men's Wear" },
     { path: '/corporate-inquiry', label: 'Corporate Inquiry' },
     { path: '/size-charts', label: 'Size Charts' },
@@ -78,8 +79,8 @@ function Header() {
   return (
     <header
       className={`sticky top-0 z-50 transition-all duration-300 ${isScrolled
-          ? 'bg-white/95 backdrop-blur-md shadow-lg'
-          : 'bg-white shadow-md'
+        ? 'bg-white/95 backdrop-blur-md shadow-lg'
+        : 'bg-white shadow-md'
         }`}
     >
       <div className="container mx-auto container-padding">
@@ -87,47 +88,47 @@ function Header() {
           {/* Logo */}
           <Link
             to="/"
-            className="flex items-center space-x-3 group"
+            className="flex items-center space-x-2 sm:space-x-3 group shrink-0"
           >
-            <div className="text-4xl transform group-hover:scale-110 transition-transform duration-300">
+            <div className="text-3xl sm:text-4xl transform group-hover:scale-110 transition-transform duration-300">
               🎓
             </div>
-            <div>
-              <h1 className="text-2xl font-bold gradient-text">Uniform Store</h1>
-              <p className="text-xs text-gray-500">School Apparel & More</p>
+            <div className="hidden xs:block">
+              <h1 className="text-lg sm:text-2xl font-bold gradient-text leading-tight">Uniform Store</h1>
+              <p className="text-[10px] sm:text-xs text-gray-500">School Apparel & More</p>
             </div>
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-1">
-            {navLinks.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                className={`relative px-4 py-2 rounded-lg font-medium transition-all duration-200 ${location.pathname === link.path
-                    ? 'text-primary-600 bg-primary-50'
-                    : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
-                  }`}
-              >
-                {link.label}
-                {location.pathname === link.path && (
-                  <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary-600 rounded-full"></span>
-                )}
-              </Link>
-            ))}
+          <nav className="hidden md:flex items-center space-x-0.5 lg:space-x-1">
+            {/* Home Link First */}
+            <Link
+              to="/"
+              className={`relative px-1.5 lg:px-4 py-2 rounded-lg text-sm lg:text-base font-medium transition-all duration-200 ${location.pathname === '/'
+                ? 'text-primary-600 bg-primary-50'
+                : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
+                }`}
+            >
+              Home
+              {location.pathname === '/' && (
+                <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary-600 rounded-full"></span>
+              )}
+            </Link>
+
+            {/* Shop by School Second */}
             <div
               className="relative"
               onMouseEnter={handleMouseEnter}
               onMouseLeave={handleMouseLeave}
             >
               <button
-                className={`relative px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-1 ${location.pathname.startsWith('/uniforms')
-                    ? 'text-primary-600 bg-primary-50'
-                    : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
+                className={`relative px-1.5 lg:px-4 py-2 rounded-lg text-sm lg:text-base font-medium transition-all duration-200 flex items-center space-x-1 ${location.pathname.startsWith('/uniforms')
+                  ? 'text-primary-600 bg-primary-50'
+                  : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
                   }`}
               >
                 <span>Shop by School</span>
-                <ChevronDown size={16} className={`transition-transform ${isShopBySchoolOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown size={14} className={`transition-transform ${isShopBySchoolOpen ? 'rotate-180' : ''}`} />
                 {location.pathname.startsWith('/uniforms') && (
                   <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary-600 rounded-full"></span>
                 )}
@@ -274,22 +275,40 @@ function Header() {
                 </div>
               )}
             </div>
+
+            {/* Other Links */}
+            {navLinks.map((link) => (
+              <Link
+                key={link.path}
+                to={link.path}
+                className={`relative px-1.5 lg:px-4 py-2 rounded-lg text-sm lg:text-base font-medium transition-all duration-200 ${location.pathname === link.path
+                  ? 'text-primary-600 bg-primary-50'
+                  : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
+                  }`}
+              >
+                {link.label}
+                {location.pathname === link.path && (
+                  <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary-600 rounded-full"></span>
+                )}
+              </Link>
+            ))}
           </nav>
 
           {/* Cart Icon */}
           <Link
             to="/cart"
-            className="relative flex items-center space-x-2 text-gray-700 hover:text-primary-600 transition-all duration-200 group"
+            className="relative flex items-center space-x-1 sm:space-x-2 text-gray-700 hover:text-primary-600 transition-all duration-200 group shrink-0"
           >
-            <div className="relative p-2 rounded-lg hover:bg-primary-50 transition-colors">
-              <ShoppingCart size={24} className="group-hover:scale-110 transition-transform" />
+            <div className="relative p-1.5 sm:p-2 rounded-lg hover:bg-primary-50 transition-colors">
+              <ShoppingCart size={20} className="sm:hidden group-hover:scale-110 transition-transform" />
+              <ShoppingCart size={24} className="hidden sm:block group-hover:scale-110 transition-transform" />
               {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-red-600 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg animate-pulse">
+                <span className="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-red-600 text-white text-[10px] sm:text-xs font-bold rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center shadow-lg animate-pulse">
                   {cartCount > 99 ? '99+' : cartCount}
                 </span>
               )}
             </div>
-            <span className="hidden md:inline font-medium">Cart</span>
+            <span className="hidden lg:inline font-medium">Cart</span>
           </Link>
 
           {/* Mobile Menu Button */}
@@ -304,52 +323,117 @@ function Header() {
 
         {/* Mobile Navigation */}
         <div
-          className={`md:hidden overflow-hidden transition-all duration-300 ${isMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+          className={`md:hidden overflow-y-auto transition-all duration-300 ease-in-out ${isMenuOpen ? 'max-h-[calc(100vh-80px)] opacity-100 pb-10' : 'max-h-0 opacity-0'
             }`}
         >
-          <nav className="py-4 border-t">
-            <div className="flex flex-col space-y-2">
-              {/* Mobile Shop by School */}
-              <div className="px-4">
-                <div className="font-semibold text-gray-700 mb-2">Shop by School</div>
-                <div className="pl-4 space-y-1">
+          <nav className="py-2 border-t flex flex-col space-y-1">
+            {/* Home First */}
+            <Link
+              to="/"
+              className={`px-4 py-3 rounded-lg font-medium transition-all duration-200 ${location.pathname === '/'
+                ? 'text-primary-600 bg-primary-50 border-l-4 border-primary-600'
+                : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
+                }`}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Home
+            </Link>
+
+            {/* Shop by School Collapsible */}
+            <div className="flex flex-col">
+              <button
+                onClick={() => setIsMobileSchoolsOpen(!isMobileSchoolsOpen)}
+                className={`flex items-center justify-between px-4 py-3 rounded-lg font-medium transition-all duration-200 ${location.pathname.startsWith('/uniforms')
+                  ? 'text-primary-600 bg-primary-50 border-l-4 border-primary-600'
+                  : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
+                  }`}
+              >
+                <span>Shop by School</span>
+                <ChevronDown size={18} className={`transition-transform duration-300 ${isMobileSchoolsOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isMobileSchoolsOpen ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                <div className="pl-6 pr-4 py-2 space-y-4">
                   {Object.entries(schoolsByCategory).map(([category, categorySchools]) => (
                     categorySchools.length > 0 && (
-                      <div key={category} className="mb-3">
-                        <div className="text-xs font-semibold text-gray-500 uppercase mb-1">
+                      <div key={category} className="mb-2">
+                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">
                           {categoryLabels[category] || category}
                         </div>
-                        {categorySchools.map((school) => (
-                          <Link
-                            key={school._id || school.id}
-                            to={`/uniforms/${school.slug || school._id || school.id}`}
-                            className="block px-3 py-2 text-sm text-gray-700 hover:text-primary-600 hover:bg-gray-50 rounded"
-                            onClick={() => setIsMenuOpen(false)}
-                          >
-                            {school.name}
-                          </Link>
-                        ))}
+                        <div className="grid grid-cols-1 gap-1">
+                          {categorySchools.map((school) => {
+                            const schoolId = school._id || school.id;
+                            const isExpanded = expandedSchoolId === schoolId;
+                            return (
+                              <div key={schoolId} className="flex flex-col">
+                                <div
+                                  className={`flex items-center justify-between p-2 rounded-md transition-all duration-200 cursor-pointer ${isExpanded ? 'bg-primary-50 text-primary-600' : 'text-gray-600 hover:text-primary-600 hover:bg-primary-50'}`}
+                                  onClick={() => setExpandedSchoolId(isExpanded ? null : schoolId)}
+                                >
+                                  <div className="flex items-center space-x-3">
+                                    <span className="text-lg">{school.logo || '🏫'}</span>
+                                    <span className="font-medium text-sm">{school.name}</span>
+                                  </div>
+                                  <ChevronDown size={14} className={`transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+                                </div>
+
+                                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-64 opacity-100 mb-2' : 'max-h-0 opacity-0'}`}>
+                                  <div className="pl-11 pr-4 py-1 flex flex-col">
+                                    <Link
+                                      to={`/uniforms/${school.slug || schoolId}`}
+                                      className="py-2 text-xs font-semibold text-gray-500 hover:text-primary-600 border-b border-gray-100"
+                                      onClick={() => {
+                                        setIsMenuOpen(false)
+                                        setIsMobileSchoolsOpen(false)
+                                        setExpandedSchoolId(null)
+                                      }}
+                                    >
+                                      All Products
+                                    </Link>
+                                    {((Array.isArray(school.category) && school.category.length > 0)
+                                      ? school.category
+                                      : ['uniforms', 'sportswear', 'footwear', 'accessories', 'outerwear']
+                                    ).map((catId) => (
+                                      <Link
+                                        key={catId}
+                                        to={`/uniforms/${school.slug || schoolId}?productCategory=${catId}`}
+                                        className="py-2 text-xs text-gray-500 hover:text-primary-600 transition-colors"
+                                        onClick={() => {
+                                          setIsMenuOpen(false)
+                                          setIsMobileSchoolsOpen(false)
+                                          setExpandedSchoolId(null)
+                                        }}
+                                      >
+                                        {categoryLabels[catId] || catId.charAt(0).toUpperCase() + catId.slice(1)}
+                                      </Link>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
                       </div>
                     )
                   ))}
                 </div>
               </div>
-
-              {/* Other Mobile Links */}
-              {navLinks.map((link) => (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  className={`px-4 py-3 rounded-lg font-medium transition-all duration-200 ${location.pathname === link.path
-                      ? 'text-primary-600 bg-primary-50 border-l-4 border-primary-600'
-                      : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
-                    }`}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {link.label}
-                </Link>
-              ))}
             </div>
+
+            {/* Other Mobile Links */}
+            {navLinks.map((link) => (
+              <Link
+                key={link.path}
+                to={link.path}
+                className={`px-4 py-3 rounded-lg font-medium transition-all duration-200 ${location.pathname === link.path
+                  ? 'text-primary-600 bg-primary-50 border-l-4 border-primary-600'
+                  : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
+                  }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                {link.label}
+              </Link>
+            ))}
           </nav>
         </div>
       </div>

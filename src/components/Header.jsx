@@ -51,18 +51,6 @@ function Header() {
     setCloseTimeout(timeout)
   }
 
-  // Group schools by category (each school appears only once under its first category)
-  const schoolsByCategory = schools.reduce((acc, school) => {
-    const categories = Array.isArray(school.category) ? school.category : [school.category || 'primary']
-    const mainCategory = categories[0] || 'primary'
-
-    if (!acc[mainCategory]) {
-      acc[mainCategory] = []
-    }
-    acc[mainCategory].push(school)
-    return acc
-  }, {})
-
   const categoryLabels = {
     'pre-primary': 'Pre-Primary',
     'primary': 'Primary',
@@ -142,135 +130,99 @@ function Header() {
                   onMouseEnter={handleMouseEnter}
                   onMouseLeave={handleMouseLeave}
                 >
-                  {Object.entries(schoolsByCategory).map(([category, categorySchools], catIndex) => (
-                    categorySchools.length > 0 && (
-                      <div key={category} className="relative">
-                        <div className="px-4 py-2 text-xs font-bold text-gray-500 uppercase bg-gray-50 border-y border-gray-100 first:border-t-0">
-                          {categoryLabels[category] || category}
+                  {schools.map((school, index) => (
+                    <div
+                      key={school._id || school.id}
+                      className="school-item-wrapper relative w-full"
+                      onMouseEnter={() => {
+                        if (closeTimeout) {
+                          clearTimeout(closeTimeout)
+                          setCloseTimeout(null)
+                        }
+                        setHoveredSchool(school._id || school.id)
+                        setIsShopBySchoolOpen(true)
+                      }}
+                      onMouseLeave={(e) => {
+                        const relatedTarget = e.relatedTarget
+                        if (relatedTarget) {
+                          const isMovingToSideDropdown = relatedTarget.closest('.side-dropdown')
+                          const isMovingToSchoolWrapper = relatedTarget.closest('.school-item-wrapper')
+                          const isMovingToMainDropdown = relatedTarget.closest('.main-dropdown')
+                          if (!isMovingToSideDropdown && !isMovingToSchoolWrapper && !isMovingToMainDropdown) {
+                            const timeout = setTimeout(() => {
+                              setHoveredSchool(null)
+                            }, 200)
+                            setCloseTimeout(timeout)
+                          }
+                        } else {
+                          const timeout = setTimeout(() => {
+                            setHoveredSchool(null)
+                          }, 200)
+                          setCloseTimeout(timeout)
+                        }
+                      }}
+                    >
+                      <Link
+                        to={`/uniforms/${school.slug || school._id || school.id}`}
+                        className="school-item flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors"
+                        onClick={() => {
+                          setIsShopBySchoolOpen(false)
+                          setHoveredSchool(null)
+                        }}
+                      >
+                        <div
+                          className="w-8 h-8 rounded flex items-center justify-center text-lg"
+                          style={{ backgroundColor: (school.color || '#0ea5e9') + '20', color: school.color || '#0ea5e9' }}
+                        >
+                          {school.logo || '🏫'}
                         </div>
-                        {categorySchools.map((school, index) => (
-                          <div
-                            key={school._id || school.id}
-                            className="school-item-wrapper relative w-full"
-                            style={{
-                              marginTop: index === 0 ? '0' : '-1px',
-                              paddingTop: index === 0 ? '0' : '1px'
-                            }}
-                            onMouseEnter={() => {
-                              if (closeTimeout) {
-                                clearTimeout(closeTimeout)
-                                setCloseTimeout(null)
-                              }
-                              setHoveredSchool(school._id || school.id)
-                              setIsShopBySchoolOpen(true)
-                            }}
-                            onMouseLeave={(e) => {
-                              // Check if moving to side dropdown or another school item wrapper
-                              const relatedTarget = e.relatedTarget
-                              if (relatedTarget) {
-                                const isMovingToSideDropdown = relatedTarget.closest('.side-dropdown')
-                                const isMovingToSchoolWrapper = relatedTarget.closest('.school-item-wrapper')
-                                const isMovingToMainDropdown = relatedTarget.closest('.main-dropdown')
-                                if (!isMovingToSideDropdown && !isMovingToSchoolWrapper && !isMovingToMainDropdown) {
-                                  const timeout = setTimeout(() => {
-                                    setHoveredSchool(null)
-                                  }, 200)
-                                  setCloseTimeout(timeout)
-                                }
-                              } else {
-                                const timeout = setTimeout(() => {
-                                  setHoveredSchool(null)
-                                }, 200)
-                                setCloseTimeout(timeout)
-                              }
+                        <span className="flex-1 text-gray-700 font-medium text-sm">{school.name}</span>
+                        <ChevronDown size={14} className="text-gray-400 -rotate-90" />
+                      </Link>
+
+                      {/* Side Dropdown */}
+                      {hoveredSchool === (school._id || school.id) && (
+                        <div
+                          className="side-dropdown absolute left-full top-0 w-52 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50"
+                          style={{ marginLeft: '-2px' }}
+                          onMouseEnter={() => {
+                            if (closeTimeout) {
+                              clearTimeout(closeTimeout)
+                              setCloseTimeout(null)
+                            }
+                            setHoveredSchool(school._id || school.id)
+                            setIsShopBySchoolOpen(true)
+                          }}
+                        >
+                          <Link
+                            to={`/uniforms/${school.slug || school._id || school.id}`}
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-600 font-semibold border-b border-gray-100"
+                            onClick={() => {
+                              setIsShopBySchoolOpen(false)
+                              setHoveredSchool(null)
                             }}
                           >
+                            All Products
+                          </Link>
+                          {((Array.isArray(school.category) && school.category.length > 0)
+                            ? school.category
+                            : ['uniforms', 'sportswear', 'footwear', 'accessories', 'outerwear']
+                          ).map((catId) => (
                             <Link
-                              to={`/uniforms/${school.slug || school._id || school.id}`}
-                              className="school-item flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors block"
+                              key={catId}
+                              to={`/uniforms/${school.slug || school._id || school.id}?productCategory=${catId}`}
+                              className="block px-4 py-2 text-sm text-gray-600 hover:bg-primary-50 hover:text-primary-600 transition-colors"
                               onClick={() => {
                                 setIsShopBySchoolOpen(false)
                                 setHoveredSchool(null)
                               }}
                             >
-                              <div
-                                className="w-8 h-8 rounded flex items-center justify-center text-lg"
-                                style={{ backgroundColor: (school.color || '#0ea5e9') + '20', color: school.color || '#0ea5e9' }}
-                              >
-                                {school.logo || '🏫'}
-                              </div>
-                              <span className="flex-1 text-gray-700 font-medium">{school.name}</span>
-                              <ChevronDown size={14} className="text-gray-400" />
+                              {categoryLabels[catId] || catId.charAt(0).toUpperCase() + catId.slice(1)}
                             </Link>
-
-                            {/* Invisible bridge to prevent gap between school item and side dropdown */}
-                            {hoveredSchool === (school._id || school.id) && (
-                              <div
-                                className="absolute left-full top-0 w-2 h-full z-40 pointer-events-auto"
-                                style={{ marginLeft: '-2px' }}
-                                onMouseEnter={() => {
-                                  if (closeTimeout) {
-                                    clearTimeout(closeTimeout)
-                                    setCloseTimeout(null)
-                                  }
-                                  setHoveredSchool(school._id || school.id)
-                                  setIsShopBySchoolOpen(true)
-                                }}
-                              />
-                            )}
-
-                            {/* Side Dropdown for Product Categories */}
-                            {hoveredSchool === (school._id || school.id) && (
-                              <div
-                                className="side-dropdown absolute left-full top-0 w-52 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50"
-                                style={{ marginLeft: '-2px' }}
-                                onMouseEnter={() => {
-                                  if (closeTimeout) {
-                                    clearTimeout(closeTimeout)
-                                    setCloseTimeout(null)
-                                  }
-                                  setHoveredSchool(school._id || school.id)
-                                  setIsShopBySchoolOpen(true)
-                                }}
-                                onMouseLeave={() => {
-                                  setHoveredSchool(null)
-                                }}
-                              >
-                                <Link
-                                  to={`/uniforms/${school.slug || school._id || school.id}`}
-                                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-600 font-semibold border-b border-gray-100"
-                                  onClick={() => {
-                                    setIsShopBySchoolOpen(false)
-                                    setHoveredSchool(null)
-                                  }}
-                                >
-                                  All Products
-                                </Link>
-                                {((Array.isArray(school.category) && school.category.length > 0)
-                                  ? school.category
-                                  : ['uniforms', 'sportswear', 'footwear', 'accessories', 'outerwear']
-                                ).map((catId) => (
-                                  <Link
-                                    key={catId}
-                                    to={`/uniforms/${school.slug || school._id || school.id}?productCategory=${catId}`}
-                                    className="block px-4 py-2 text-sm text-gray-600 hover:bg-primary-50 hover:text-primary-600 transition-colors"
-                                    onClick={() => {
-                                      setIsShopBySchoolOpen(false)
-                                      setHoveredSchool(null)
-                                    }}
-                                  >
-                                    {categoryLabels[catId] || catId.charAt(0).toUpperCase() + catId.slice(1)}
-                                  </Link>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                        {Object.keys(schoolsByCategory).indexOf(category) < Object.keys(schoolsByCategory).length - 1 && (
-                          <div className="border-t my-1 mx-2"></div>
-                        )}
-                      </div>
-                    )
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
               )}
@@ -353,69 +305,58 @@ function Header() {
               </button>
 
               <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isMobileSchoolsOpen ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                <div className="pl-6 pr-4 py-2 space-y-4">
-                  {Object.entries(schoolsByCategory).map(([category, categorySchools]) => (
-                    categorySchools.length > 0 && (
-                      <div key={category} className="mb-2">
-                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">
-                          {categoryLabels[category] || category}
+                <div className="pl-6 pr-4 py-2 space-y-2">
+                  {schools.map((school) => {
+                    const schoolId = school._id || school.id;
+                    const isExpanded = expandedSchoolId === schoolId;
+                    return (
+                      <div key={schoolId} className="flex flex-col">
+                        <div
+                          className={`flex items-center justify-between p-2 rounded-md transition-all duration-200 cursor-pointer ${isExpanded ? 'bg-primary-50 text-primary-600' : 'text-gray-600 hover:text-primary-600 hover:bg-primary-50'}`}
+                          onClick={() => setExpandedSchoolId(isExpanded ? null : schoolId)}
+                        >
+                          <div className="flex items-center space-x-3">
+                            <span className="text-lg">{school.logo || '🏫'}</span>
+                            <span className="font-medium text-sm">{school.name}</span>
+                          </div>
+                          <ChevronDown size={14} className={`transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
                         </div>
-                        <div className="grid grid-cols-1 gap-1">
-                          {categorySchools.map((school) => {
-                            const schoolId = school._id || school.id;
-                            const isExpanded = expandedSchoolId === schoolId;
-                            return (
-                              <div key={schoolId} className="flex flex-col">
-                                <div
-                                  className={`flex items-center justify-between p-2 rounded-md transition-all duration-200 cursor-pointer ${isExpanded ? 'bg-primary-50 text-primary-600' : 'text-gray-600 hover:text-primary-600 hover:bg-primary-50'}`}
-                                  onClick={() => setExpandedSchoolId(isExpanded ? null : schoolId)}
-                                >
-                                  <div className="flex items-center space-x-3">
-                                    <span className="text-lg">{school.logo || '🏫'}</span>
-                                    <span className="font-medium text-sm">{school.name}</span>
-                                  </div>
-                                  <ChevronDown size={14} className={`transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
-                                </div>
 
-                                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-64 opacity-100 mb-2' : 'max-h-0 opacity-0'}`}>
-                                  <div className="pl-11 pr-4 py-1 flex flex-col">
-                                    <Link
-                                      to={`/uniforms/${school.slug || schoolId}`}
-                                      className="py-2 text-xs font-semibold text-gray-500 hover:text-primary-600 border-b border-gray-100"
-                                      onClick={() => {
-                                        setIsMenuOpen(false)
-                                        setIsMobileSchoolsOpen(false)
-                                        setExpandedSchoolId(null)
-                                      }}
-                                    >
-                                      All Products
-                                    </Link>
-                                    {((Array.isArray(school.category) && school.category.length > 0)
-                                      ? school.category
-                                      : ['uniforms', 'sportswear', 'footwear', 'accessories', 'outerwear']
-                                    ).map((catId) => (
-                                      <Link
-                                        key={catId}
-                                        to={`/uniforms/${school.slug || schoolId}?productCategory=${catId}`}
-                                        className="py-2 text-xs text-gray-500 hover:text-primary-600 transition-colors"
-                                        onClick={() => {
-                                          setIsMenuOpen(false)
-                                          setIsMobileSchoolsOpen(false)
-                                          setExpandedSchoolId(null)
-                                        }}
-                                      >
-                                        {categoryLabels[catId] || catId.charAt(0).toUpperCase() + catId.slice(1)}
-                                      </Link>
-                                    ))}
-                                  </div>
-                                </div>
-                              </div>
-                            )
-                          })}
+                        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-64 opacity-100 mb-2' : 'max-h-0 opacity-0'}`}>
+                          <div className="pl-11 pr-4 py-1 flex flex-col">
+                            <Link
+                              to={`/uniforms/${school.slug || schoolId}`}
+                              className="py-2 text-xs font-semibold text-gray-500 hover:text-primary-600 border-b border-gray-100"
+                              onClick={() => {
+                                setIsMenuOpen(false)
+                                setIsMobileSchoolsOpen(false)
+                                setExpandedSchoolId(null)
+                              }}
+                            >
+                              All Products
+                            </Link>
+                            {((Array.isArray(school.category) && school.category.length > 0)
+                              ? school.category
+                              : ['uniforms', 'sportswear', 'footwear', 'accessories', 'outerwear']
+                            ).map((catId) => (
+                              <Link
+                                key={catId}
+                                to={`/uniforms/${school.slug || schoolId}?productCategory=${catId}`}
+                                className="py-2 text-xs text-gray-500 hover:text-primary-600 transition-colors"
+                                onClick={() => {
+                                  setIsMenuOpen(false)
+                                  setIsMobileSchoolsOpen(false)
+                                  setExpandedSchoolId(null)
+                                }}
+                              >
+                                {categoryLabels[catId] || catId.charAt(0).toUpperCase() + catId.slice(1)}
+                              </Link>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     )
-                  ))}
+                  })}
                 </div>
               </div>
             </div>
@@ -442,4 +383,3 @@ function Header() {
 }
 
 export default Header
-

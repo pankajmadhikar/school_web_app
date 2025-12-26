@@ -281,37 +281,6 @@ function Home() {
         </div>
       </section>
 
-      {/* Categories */}
-      <section className="section-padding bg-gradient-to-b from-white to-gray-50">
-        <div className="container mx-auto container-padding">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-extrabold mb-3 gradient-text">Shop by Category</h2>
-            <p className="text-gray-600 text-lg">Find exactly what you're looking for</p>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
-            {[
-              { id: 'uniforms', name: 'Uniforms', icon: '👔', color: 'from-blue-500 to-blue-600' },
-              { id: 'sportswear', name: 'Sportswear', icon: '⚽', color: 'from-green-500 to-green-600' },
-              { id: 'footwear', name: 'Footwear', icon: '👟', color: 'from-purple-500 to-purple-600' },
-              { id: 'accessories', name: 'Accessories', icon: '🎒', color: 'from-orange-500 to-orange-600' },
-              { id: 'outerwear', name: 'Outerwear', icon: '🧥', color: 'from-red-500 to-red-600' },
-            ].map((category) => (
-              <Link
-                key={category.id}
-                to={`/uniforms?category=${category.id}`}
-                className="card p-8 text-center group hover:scale-105 transition-all duration-300"
-              >
-                <div className={`w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br ${category.color} flex items-center justify-center text-3xl transform group-hover:rotate-6 group-hover:scale-110 transition-all duration-300`}>
-                  {category.icon}
-                </div>
-                <h3 className="font-bold text-lg group-hover:text-primary-600 transition-colors">
-                  {category.name}
-                </h3>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* CTA Section */}
       <section className="section-padding bg-gradient-to-r from-primary-600 to-primary-800 text-white">

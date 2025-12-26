@@ -49,7 +49,7 @@ export const getSchool = async (req, res, next) => {
 // @access  Private/Admin
 export const createSchool = async (req, res, next) => {
   try {
-    const { name, ...rest } = req.body;
+    const { name, category, ...rest } = req.body;
 
     // Generate slug from name
     const slug = name
@@ -59,9 +59,19 @@ export const createSchool = async (req, res, next) => {
       .replace(/[\s_-]+/g, '-')
       .replace(/^-+|-+$/g, '');
 
+    // Ensure category is an array
+    let categories = category;
+    if (!Array.isArray(category)) {
+      // Handle backward compatibility: if single string, convert to array
+      categories = category ? [category] : ['primary'];
+    }
+    // Remove duplicates
+    categories = [...new Set(categories)];
+
     const school = await School.create({
       name,
       slug,
+      category: categories,
       ...rest,
     });
 
@@ -96,6 +106,17 @@ export const updateSchool = async (req, res, next) => {
         .replace(/[^\w\s-]/g, '')
         .replace(/[\s_-]+/g, '-')
         .replace(/^-+|-+$/g, '');
+    }
+
+    // Ensure category is an array
+    if (req.body.category !== undefined) {
+      let categories = req.body.category;
+      if (!Array.isArray(categories)) {
+        // Handle backward compatibility: if single string, convert to array
+        categories = categories ? [categories] : ['primary'];
+      }
+      // Remove duplicates
+      req.body.category = [...new Set(categories)];
     }
 
     school = await School.findByIdAndUpdate(req.params.id, req.body, {

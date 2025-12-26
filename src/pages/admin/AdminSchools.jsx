@@ -99,8 +99,25 @@ function AdminSchools() {
 
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Category:</span>
-                    <span className="font-semibold capitalize">{school.category || 'N/A'}</span>
+                    <span className="text-gray-600">Categories:</span>
+                    <div className="flex flex-wrap gap-1 justify-end">
+                      {(() => {
+                        const categories = Array.isArray(school.category) 
+                          ? school.category 
+                          : school.category 
+                            ? [school.category] 
+                            : ['primary'];
+                        return categories.length > 0 ? (
+                          categories.map((cat, idx) => (
+                            <span key={idx} className="font-semibold capitalize px-2 py-1 bg-primary-100 text-primary-800 rounded text-xs">
+                              {cat}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="font-semibold text-gray-400">N/A</span>
+                        );
+                      })()}
+                    </div>
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-600">Products:</span>

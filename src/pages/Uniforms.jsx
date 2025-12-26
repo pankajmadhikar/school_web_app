@@ -14,20 +14,35 @@ function Uniforms() {
   const { products, loading: productsLoading } = useProducts()
   const { schools, loading: schoolsLoading } = useSchools()
 
-  // Filter schools based on selected school type
+  // Filter schools based on selected school type (handle both array and string formats)
   const filteredSchools = useMemo(() => {
     if (selectedSchoolType === 'all') {
       return schools;
     }
-    return schools.filter(school => school.category === selectedSchoolType);
+    return schools.filter(school => {
+      // Handle both old format (string) and new format (array)
+      const categories = Array.isArray(school.category) 
+        ? school.category 
+        : school.category 
+          ? [school.category] 
+          : ['primary'];
+      return categories.includes(selectedSchoolType);
+    });
   }, [schools, selectedSchoolType]);
 
   // Reset selected school if it doesn't match the current filter
   useEffect(() => {
     if (selectedSchool !== 'all' && selectedSchoolType !== 'all') {
       const selectedSchoolObj = schools.find(s => (s._id || s.id) === selectedSchool);
-      if (selectedSchoolObj && selectedSchoolObj.category !== selectedSchoolType) {
-        setSelectedSchool('all');
+      if (selectedSchoolObj) {
+        const categories = Array.isArray(selectedSchoolObj.category) 
+          ? selectedSchoolObj.category 
+          : selectedSchoolObj.category 
+            ? [selectedSchoolObj.category] 
+            : ['primary'];
+        if (!categories.includes(selectedSchoolType)) {
+          setSelectedSchool('all');
+        }
       }
     }
   }, [selectedSchoolType, schools, selectedSchool]);
@@ -38,11 +53,20 @@ function Uniforms() {
     const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory
       const matchesSearch = searchQuery === '' || product.name.toLowerCase().includes(searchQuery.toLowerCase())
     
-    // Filter by school type (pre-primary/primary)
+    // Filter by school type (pre-primary/primary) - handle both array and string formats
     let matchesSchoolType = true
     if (selectedSchoolType !== 'all') {
         const schoolObj = typeof product.school === 'object' ? product.school : schools.find(s => s._id === product.school || s.slug === product.school)
-        matchesSchoolType = schoolObj?.category === selectedSchoolType
+        if (schoolObj) {
+          const categories = Array.isArray(schoolObj.category) 
+            ? schoolObj.category 
+            : schoolObj.category 
+              ? [schoolObj.category] 
+              : ['primary'];
+          matchesSchoolType = categories.includes(selectedSchoolType)
+        } else {
+          matchesSchoolType = false
+        }
     }
     
       // Exclude mens-wear (institution products)
@@ -159,11 +183,17 @@ function Uniforms() {
         {/* School Quick Links by Type */}
         <div className="mb-8 space-y-8">
           {/* Pre-Primary Schools */}
-          {schools.filter(s => s.category === 'pre-primary').length > 0 && (
+          {schools.filter(s => {
+            const categories = Array.isArray(s.category) ? s.category : s.category ? [s.category] : ['primary'];
+            return categories.includes('pre-primary');
+          }).length > 0 && (
             <div>
               <h2 className="text-2xl font-bold mb-4">Pre-Primary Schools</h2>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                {schools.filter(s => s.category === 'pre-primary').map((school) => (
+                {schools.filter(s => {
+                  const categories = Array.isArray(s.category) ? s.category : s.category ? [s.category] : ['primary'];
+                  return categories.includes('pre-primary');
+                }).map((school) => (
                   <Link
                     key={school._id || school.id}
                     to={`/uniforms/${school.slug || school._id || school.id}`}
@@ -180,11 +210,17 @@ function Uniforms() {
           )}
 
           {/* Primary Schools */}
-          {schools.filter(s => s.category === 'primary').length > 0 && (
+          {schools.filter(s => {
+            const categories = Array.isArray(s.category) ? s.category : s.category ? [s.category] : ['primary'];
+            return categories.includes('primary');
+          }).length > 0 && (
             <div>
               <h2 className="text-2xl font-bold mb-4">Primary Schools</h2>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                {schools.filter(s => s.category === 'primary').map((school) => (
+                {schools.filter(s => {
+                  const categories = Array.isArray(s.category) ? s.category : s.category ? [s.category] : ['primary'];
+                  return categories.includes('primary');
+                }).map((school) => (
                   <Link
                     key={school._id || school.id}
                     to={`/uniforms/${school.slug || school._id || school.id}`}
@@ -201,11 +237,17 @@ function Uniforms() {
           )}
 
           {/* Secondary Schools */}
-          {schools.filter(s => s.category === 'secondary').length > 0 && (
+          {schools.filter(s => {
+            const categories = Array.isArray(s.category) ? s.category : s.category ? [s.category] : ['primary'];
+            return categories.includes('secondary');
+          }).length > 0 && (
             <div>
               <h2 className="text-2xl font-bold mb-4">Secondary Schools</h2>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                {schools.filter(s => s.category === 'secondary').map((school) => (
+                {schools.filter(s => {
+                  const categories = Array.isArray(s.category) ? s.category : s.category ? [s.category] : ['primary'];
+                  return categories.includes('secondary');
+                }).map((school) => (
                   <Link
                     key={school._id || school.id}
                     to={`/uniforms/${school.slug || school._id || school.id}`}
@@ -222,11 +264,17 @@ function Uniforms() {
           )}
 
           {/* Institution Schools */}
-          {schools.filter(s => s.category === 'institution').length > 0 && (
+          {schools.filter(s => {
+            const categories = Array.isArray(s.category) ? s.category : s.category ? [s.category] : ['primary'];
+            return categories.includes('institution');
+          }).length > 0 && (
             <div>
               <h2 className="text-2xl font-bold mb-4">Institutions</h2>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                {schools.filter(s => s.category === 'institution').map((school) => (
+                {schools.filter(s => {
+                  const categories = Array.isArray(s.category) ? s.category : s.category ? [s.category] : ['primary'];
+                  return categories.includes('institution');
+                }).map((school) => (
                   <Link
                     key={school._id || school.id}
                     to={`/uniforms/${school.slug || school._id || school.id}`}

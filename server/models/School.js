@@ -27,9 +27,15 @@ const schoolSchema = new mongoose.Schema(
       default: '#0ea5e9',
     },
     category: {
-      type: String,
+      type: [String],
       enum: ['primary', 'pre-primary', 'secondary', 'institution'],
-      default: 'primary',
+      default: ['primary'],
+      validate: {
+        validator: function(v) {
+          return v && v.length > 0;
+        },
+        message: 'At least one category is required'
+      }
     },
     description: {
       type: String,

@@ -19,7 +19,7 @@ function SchoolForm() {
     logo: '',
     image: '',
     color: '#0ea5e9',
-    category: 'primary',
+    category: ['primary'],
     description: '',
   });
 
@@ -43,12 +43,18 @@ function SchoolForm() {
       const school = response.data?.find(s => s._id === id);
       
       if (school) {
+        // Handle both old format (string) and new format (array)
+        let categories = school.category || ['primary'];
+        if (!Array.isArray(categories)) {
+          categories = [categories];
+        }
+        
         setFormData({
           name: school.name || '',
           logo: school.logo || '',
           image: school.image || '',
           color: school.color || '#0ea5e9',
-          category: school.category || 'primary',
+          category: categories,
           description: school.description || '',
         });
       } else {
@@ -64,6 +70,28 @@ function SchoolForm() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+  };
+
+  const handleCategoryChange = (categoryValue) => {
+    setFormData((prev) => {
+      const currentCategories = prev.category || [];
+      const isSelected = currentCategories.includes(categoryValue);
+      
+      let newCategories;
+      if (isSelected) {
+        // Remove category if already selected
+        newCategories = currentCategories.filter((cat) => cat !== categoryValue);
+        // Ensure at least one category is selected
+        if (newCategories.length === 0) {
+          newCategories = ['primary'];
+        }
+      } else {
+        // Add category if not selected
+        newCategories = [...currentCategories, categoryValue];
+      }
+      
+      return { ...prev, category: newCategories };
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -162,20 +190,44 @@ function SchoolForm() {
 
           <div className="grid md:grid-cols-2 gap-6">
             <div>
-              <label className="block font-semibold mb-2">Category *</label>
-              <select
-                name="category"
-                value={formData.category}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
-              >
-                {categories.map((cat) => (
-                  <option key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </option>
-                ))}
-              </select>
+              <label className="block font-semibold mb-2">Categories *</label>
+              <div className="border border-gray-300 rounded-lg p-4 space-y-3 bg-gray-50">
+                {categories.map((cat) => {
+                  const isSelected = formData.category?.includes(cat.value) || false;
+                  return (
+                    <label
+                      key={cat.value}
+                      className="flex items-center space-x-3 cursor-pointer hover:bg-white p-2 rounded transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleCategoryChange(cat.value)}
+                        className="w-5 h-5 text-primary-600 border-gray-300 rounded focus:ring-primary-500 cursor-pointer"
+                      />
+                      <span className="text-gray-700 font-medium">{cat.label}</span>
+                    </label>
+                  );
+                })}
+              </div>
+              <p className="text-sm text-gray-500 mt-2">
+                Select one or more categories. At least one category is required.
+              </p>
+              {formData.category && formData.category.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {formData.category.map((cat) => {
+                    const catLabel = categories.find((c) => c.value === cat)?.label || cat;
+                    return (
+                      <span
+                        key={cat}
+                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-100 text-primary-800"
+                      >
+                        {catLabel}
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
             </div>
             <div>
               <label className="block font-semibold mb-2">Color *</label>

@@ -26,10 +26,11 @@ app.use(express.urlencoded({ extended: true }));
 // CORS middleware
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: '*',
     credentials: true,
   })
 );
+
 
 // Routes
 app.use('/api/admin', adminRoutes);

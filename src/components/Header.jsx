@@ -49,13 +49,15 @@ function Header() {
     setCloseTimeout(timeout)
   }
 
-  // Group schools by category
+  // Group schools by category (each school appears only once under its first category)
   const schoolsByCategory = schools.reduce((acc, school) => {
-    const category = school.category || 'primary'
-    if (!acc[category]) {
-      acc[category] = []
+    const categories = Array.isArray(school.category) ? school.category : [school.category || 'primary']
+    const mainCategory = categories[0] || 'primary'
+
+    if (!acc[mainCategory]) {
+      acc[mainCategory] = []
     }
-    acc[category].push(school)
+    acc[mainCategory].push(school)
     return acc
   }, {})
 
@@ -74,18 +76,17 @@ function Header() {
   ]
 
   return (
-    <header 
-      className={`sticky top-0 z-50 transition-all duration-300 ${
-        isScrolled 
-          ? 'bg-white/95 backdrop-blur-md shadow-lg' 
+    <header
+      className={`sticky top-0 z-50 transition-all duration-300 ${isScrolled
+          ? 'bg-white/95 backdrop-blur-md shadow-lg'
           : 'bg-white shadow-md'
-      }`}
+        }`}
     >
       <div className="container mx-auto container-padding">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className="flex items-center space-x-3 group"
           >
             <div className="text-4xl transform group-hover:scale-110 transition-transform duration-300">
@@ -103,11 +104,10 @@ function Header() {
               <Link
                 key={link.path}
                 to={link.path}
-                className={`relative px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                  location.pathname === link.path
+                className={`relative px-4 py-2 rounded-lg font-medium transition-all duration-200 ${location.pathname === link.path
                     ? 'text-primary-600 bg-primary-50'
                     : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
-                }`}
+                  }`}
               >
                 {link.label}
                 {location.pathname === link.path && (
@@ -115,17 +115,16 @@ function Header() {
                 )}
               </Link>
             ))}
-             <div
+            <div
               className="relative"
               onMouseEnter={handleMouseEnter}
               onMouseLeave={handleMouseLeave}
             >
               <button
-                className={`relative px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-1 ${
-                  location.pathname.startsWith('/uniforms')
+                className={`relative px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-1 ${location.pathname.startsWith('/uniforms')
                     ? 'text-primary-600 bg-primary-50'
                     : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
-                }`}
+                  }`}
               >
                 <span>Shop by School</span>
                 <ChevronDown size={16} className={`transition-transform ${isShopBySchoolOpen ? 'rotate-180' : ''}`} />
@@ -136,20 +135,23 @@ function Header() {
 
               {/* Main Dropdown */}
               {isShopBySchoolOpen && (
-                <div 
+                <div
                   className="main-dropdown absolute top-full left-0 w-64 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50"
                   style={{ marginTop: '0px' }}
                   onMouseEnter={handleMouseEnter}
                   onMouseLeave={handleMouseLeave}
                 >
-                  {Object.entries(schoolsByCategory).map(([category, categorySchools]) => (
+                  {Object.entries(schoolsByCategory).map(([category, categorySchools], catIndex) => (
                     categorySchools.length > 0 && (
                       <div key={category} className="relative">
+                        <div className="px-4 py-2 text-xs font-bold text-gray-500 uppercase bg-gray-50 border-y border-gray-100 first:border-t-0">
+                          {categoryLabels[category] || category}
+                        </div>
                         {categorySchools.map((school, index) => (
                           <div
                             key={school._id || school.id}
                             className="school-item-wrapper relative w-full"
-                            style={{ 
+                            style={{
                               marginTop: index === 0 ? '0' : '-1px',
                               paddingTop: index === 0 ? '0' : '1px'
                             }}
@@ -202,7 +204,7 @@ function Header() {
 
                             {/* Invisible bridge to prevent gap between school item and side dropdown */}
                             {hoveredSchool === (school._id || school.id) && (
-                              <div 
+                              <div
                                 className="absolute left-full top-0 w-2 h-full z-40 pointer-events-auto"
                                 style={{ marginLeft: '-2px' }}
                                 onMouseEnter={() => {
@@ -218,7 +220,7 @@ function Header() {
 
                             {/* Side Dropdown for Product Categories */}
                             {hoveredSchool === (school._id || school.id) && (
-                              <div 
+                              <div
                                 className="side-dropdown absolute left-full top-0 w-52 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50"
                                 style={{ marginLeft: '-2px' }}
                                 onMouseEnter={() => {
@@ -243,23 +245,20 @@ function Header() {
                                 >
                                   All Products
                                 </Link>
-                                {[
-                                  { id: 'uniforms', name: 'Uniforms' },
-                                  { id: 'sportswear', name: 'Sportswear' },
-                                  { id: 'footwear', name: 'Footwear' },
-                                  { id: 'accessories', name: 'Accessories' },
-                                  { id: 'outerwear', name: 'Outerwear' },
-                                ].map((cat) => (
+                                {((Array.isArray(school.category) && school.category.length > 0)
+                                  ? school.category
+                                  : ['uniforms', 'sportswear', 'footwear', 'accessories', 'outerwear']
+                                ).map((catId) => (
                                   <Link
-                                    key={cat.id}
-                                    to={`/uniforms/${school.slug || school._id || school.id}?productCategory=${cat.id}`}
+                                    key={catId}
+                                    to={`/uniforms/${school.slug || school._id || school.id}?productCategory=${catId}`}
                                     className="block px-4 py-2 text-sm text-gray-600 hover:bg-primary-50 hover:text-primary-600 transition-colors"
                                     onClick={() => {
                                       setIsShopBySchoolOpen(false)
                                       setHoveredSchool(null)
                                     }}
                                   >
-                                    {cat.name}
+                                    {categoryLabels[catId] || catId.charAt(0).toUpperCase() + catId.slice(1)}
                                   </Link>
                                 ))}
                               </div>
@@ -305,9 +304,8 @@ function Header() {
 
         {/* Mobile Navigation */}
         <div
-          className={`md:hidden overflow-hidden transition-all duration-300 ${
-            isMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-          }`}
+          className={`md:hidden overflow-hidden transition-all duration-300 ${isMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+            }`}
         >
           <nav className="py-4 border-t">
             <div className="flex flex-col space-y-2">
@@ -336,17 +334,16 @@ function Header() {
                   ))}
                 </div>
               </div>
-              
+
               {/* Other Mobile Links */}
               {navLinks.map((link) => (
                 <Link
                   key={link.path}
                   to={link.path}
-                  className={`px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
-                    location.pathname === link.path
+                  className={`px-4 py-3 rounded-lg font-medium transition-all duration-200 ${location.pathname === link.path
                       ? 'text-primary-600 bg-primary-50 border-l-4 border-primary-600'
                       : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
-                  }`}
+                    }`}
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {link.label}

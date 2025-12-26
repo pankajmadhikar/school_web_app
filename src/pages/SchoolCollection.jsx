@@ -11,14 +11,14 @@ function SchoolCollection() {
   const productCategory = searchParams.get('productCategory')
   const { products, loading: productsLoading } = useProducts()
   const { school, loading: schoolLoading } = useSchool(schoolId)
-  
+
   const schoolProducts = useMemo(() => {
     if (!school || !products || products.length === 0) return []
-    
+
     let filtered = products.filter((product) => {
       // Check if product belongs to this school
       let matchesSchool = false
-      
+
       if (product.school) {
         if (typeof product.school === 'object') {
           matchesSchool = (product.school._id === school._id || product.school.slug === school.slug || product.school.id === school._id)
@@ -26,17 +26,17 @@ function SchoolCollection() {
           matchesSchool = (product.school === school._id || product.school === school.slug || product.school === school.id)
         }
       }
-      
+
       if (!matchesSchool) return false
-      
+
       // Filter by product category if specified
       if (productCategory) {
         return product.category === productCategory
       }
-      
+
       return true
     })
-    
+
     return filtered
   }, [products, school, productCategory])
 
@@ -64,13 +64,19 @@ function SchoolCollection() {
     )
   }
 
-  const categories = ['uniforms', 'sportswear', 'footwear', 'accessories', 'outerwear']
+  const categories = useMemo(() => {
+    if (school && Array.isArray(school.category) && school.category.length > 0) {
+      return school.category
+    }
+    return ['uniforms', 'sportswear', 'footwear', 'accessories', 'outerwear']
+  }, [school])
+
   const productsByCategory = useMemo(() => {
     return categories.reduce((acc, category) => {
       acc[category] = schoolProducts.filter(p => p.category === category)
       return acc
     }, {})
-  }, [schoolProducts])
+  }, [schoolProducts, categories])
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -92,7 +98,7 @@ function SchoolCollection() {
             <div>
               <h1 className="text-4xl md:text-5xl font-bold">{school.name}</h1>
               <p className="text-xl mt-2 opacity-90">
-                {productCategory 
+                {productCategory
                   ? `${productCategory.charAt(0).toUpperCase() + productCategory.slice(1)} Collection`
                   : 'Complete Uniform Collection'
                 }
@@ -132,11 +138,15 @@ function SchoolCollection() {
           if (categoryProducts.length === 0) return null
 
           const categoryNames = {
-            uniforms: 'Uniforms',
-            sportswear: 'Sportswear',
-            footwear: 'Footwear',
-            accessories: 'Accessories',
-            outerwear: 'Outerwear',
+            'pre-primary': 'Pre-Primary',
+            'primary': 'Primary',
+            'secondary': 'Secondary',
+            'institution': 'Institution',
+            'uniforms': 'Uniforms',
+            'sportswear': 'Sportswear',
+            'footwear': 'Footwear',
+            'accessories': 'Accessories',
+            'outerwear': 'Outerwear',
           }
 
           return (
@@ -155,7 +165,7 @@ function SchoolCollection() {
         {schoolProducts.length > 0 && (
           <div className="mb-12">
             <h2 className="text-3xl font-bold mb-6">
-              {productCategory 
+              {productCategory
                 ? `${productCategory.charAt(0).toUpperCase() + productCategory.slice(1)} Products`
                 : 'All Products'
               }
